@@ -2,6 +2,8 @@
 
 Benefit Card Navigator is a static, browser-based application for exploring publicly available health-plan benefits across the six New England states. It helps users find a plan, review benefit categories, compare selected Marketplace plans, and follow links back to official carrier or government sources.
 
+**Live application:** [bigbirdo07.github.io/Healthcare](https://bigbirdo07.github.io/Healthcare/)
+
 The project was designed and developed by Alberto Alejandro Paz as a portfolio project in public-data integration, consumer health information, and accessible frontend engineering.
 
 ## What it demonstrates
@@ -78,4 +80,3 @@ Alberto Alejandro Paz
 
 - Portfolio: [pazatlas.org](https://pazatlas.org/)
 - GitHub: [Bigbirdo07](https://github.com/Bigbirdo07)
-
