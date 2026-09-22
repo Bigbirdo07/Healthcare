@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta name="description" content="Look up your insurance card and see the everyday benefits connected to your plan."/>
+  <title>Benefit Card Navigator · Pazeratechnologies</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23144f46'/%3E%3Cpath d='M8 8h8.2c5 0 8 2.6 8 7s-3 7-8 7h-3.6v4H8V8Zm4.6 4v6h3.2c2.4 0 3.7-1 3.7-3s-1.3-3-3.7-3h-3.2Z' fill='%23fffaf0'/%3E%3C/svg%3E"/>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#top"><span class="brandmark">P</span><span class="brand-copy"><strong>Benefit Card Navigator</strong><small>by Pazeratechnologies</small></span></a>
+    <nav class="header-utility" aria-label="Utility navigation"><a href="#sources">About the data &amp; sources</a></nav>
+  </header>
+  <main id="top">
+    <section class="lookup-stage">
+      <div class="shell lookup-layout">
+        <div class="intro-copy">
+          <span class="eyebrow">Your health plan, explained</span>
+          <h1>Find the benefits <em>hiding in your health plan.</em></h1>
+          <p>Choose the card you already have. Review its covered care, everyday savings, and lesser-known extras in one source-backed directory.</p>
+        </div>
+        <form id="lookupForm" class="lookup-card">
+          <div class="card-top"><span>START WITH YOUR CARD</span><span class="signal">✓ OFFICIAL SOURCES</span></div>
+          <div class="field"><label for="stateSelect">Which New England state do you live in?</label><select id="stateSelect" required><option value="" selected disabled>Select a New England state</option><option value="CT">Connecticut</option><option value="ME">Maine</option><option value="MA">Massachusetts</option><option value="NH">New Hampshire</option><option value="RI">Rhode Island</option><option value="VT">Vermont</option></select></div>
+          <div class="field">
+            <label>What kind of card do you have?</label>
+            <div class="segmented" role="group" aria-label="Coverage type">
+              <button type="button" class="active" data-cover="commercial">Insurance card</button>
+              <button type="button" data-cover="medicaid">Medicaid card</button>
+            </div>
+          </div>
+          <div class="field"><label for="issuerSelect">Name on your card</label><select id="issuerSelect"></select></div>
+          <div class="card-locator" aria-label="Example insurance card showing where to find the plan name"><div class="locator-card"><span class="locator-brand">INSURANCE CARD</span><span class="locator-line short"></span><span class="locator-label">PLAN NAME</span><span class="locator-line focus"></span><span class="locator-line"></span></div><p><strong>Find the plan name</strong><br/>Look for this wording on the front of your card or in your member portal.</p></div>
+          <div class="field" id="planField"><label for="planSelect">Your exact plan</label><select id="planSelect"></select><small>Use the full plan name from your member portal or plan documents—not a member ID, group number, or short code.</small></div>
+          <div id="planHelp" class="plan-help" hidden role="status" aria-live="polite">
+            <span class="plan-help-label">CAN’T FIND THE PLAN NAME?</span>
+            <h3>Do not guess from the code on your card.</h3>
+            <p>Your card may show only a product code, member ID, or group number. To identify the complete plan name:</p>
+            <ol>
+              <li>Check your insurer’s member portal or Summary of Benefits and Coverage.</li>
+              <li>Call the <strong>Member Services</strong> number on the back of your card.</li>
+              <li>Ask for the full plan name and individual/family deductible.</li>
+            </ol>
+            <p class="plan-help-note">For your privacy, do not enter or share your member ID on this website.</p>
+          </div>
+          <button id="lookupButton" class="primary-button" type="submit"><span>Show me my benefits</span><span>→</span></button>
+          <p class="privacy">Private by design—no member ID or health information needed.</p>
+        </form>
+      </div>
+    </section>
+    <section id="results" class="results" hidden>
+      <div class="shell">
+        <div id="resultHeader" class="selected-card reveal-group"></div>
+        <section id="benefitSnapshot" class="benefit-snapshot reveal-group" aria-labelledby="snapshotTitle">
+          <div class="snapshot-heading"><div><span class="eyebrow">Your coverage first</span><h2 id="snapshotTitle">Benefits at a glance</h2></div><div class="snapshot-legend"><span><i class="legend-covered"></i>Included</span><span><i class="legend-extra"></i>Extra programs</span><span><i class="legend-not"></i>Not found</span></div></div>
+          <p class="snapshot-help">A simple four-part summary. The detailed benefits and requirements are in the marketplace below.</p>
+          <div id="snapshotChart" class="snapshot-chart"></div>
+        </section>
+        <section class="benefits-section reveal-group">
+          <div class="section-head"><div><span class="eyebrow">Your benefit marketplace</span><h2>What your card may help with</h2></div></div>
+          <div class="market-tabs" role="tablist" aria-label="Benefit marketplace views"><button id="coveredTab" class="market-tab active" type="button" role="tab" aria-selected="true">Benefits available</button><button id="notCoveredTab" class="market-tab" type="button" role="tab" aria-selected="false">Not listed as covered</button></div>
+          <div class="market-tools"><input id="benefitSearch" type="search" placeholder="Search dental, rides, vitamins, gym…" aria-label="Search your benefits"/><div id="categoryFilters" class="chips"></div></div>
+          <div id="benefitGrid" class="benefit-grid"></div>
+        </section>
+        <section class="compare-invite reveal-group">
+          <div><span class="eyebrow">Optional</span><h2>Want to compare this card with another plan?</h2><p>Your current card stays on the left. Choose one other plan only when you are ready.</p></div>
+          <button id="openCompare" class="secondary-button" type="button">Compare with another plan</button>
+        </section>
+        <section id="comparePanel" class="compare-panel" hidden>
+          <div class="compare-controls">
+            <div class="field"><label for="compareIssuer">Other insurance company</label><select id="compareIssuer"></select></div>
+            <div class="field"><label for="comparePlan">Other plan</label><select id="comparePlan"></select></div>
+            <button id="runCompare" class="primary-button small" type="button">Show comparison</button>
+          </div>
+          <div id="comparison"></div>
+        </section>
+      </div>
+    </section>
+    <section class="how-it-works reveal-group">
+      <div class="shell"><span class="eyebrow">Simple by design</span><h2>One state and one card first. Other plans only if you ask.</h2><div class="steps"><div><b>01</b><strong>Match your card</strong><span>Pick your state, company and exact plan.</span></div><div><b>02</b><strong>See your benefits</strong><span>Browse only what applies to that selection.</span></div><div><b>03</b><strong>Check requirements</strong><span>See limits and open the official source.</span></div></div></div>
+    </section>
+    <section id="sources" class="method reveal-group">
+      <div class="shell"><div class="source-intro"><div><span class="eyebrow">Official sources &amp; accuracy</span><h2>A six-state public data directory.</h2></div><p>New Hampshire and Rhode Island include detailed public plan-level cost sharing. Other states use current marketplace and carrier catalogs. Employer contracts, Medicaid eligibility categories, and exact plan documents can change benefits; your insurer remains the final authority.</p></div>
+        <div class="source-table-wrap"><table class="source-table"><thead><tr><th>State</th><th>Data status / coverage type</th><th>Carrier directory</th><th>Official reference</th></tr></thead><tbody>
+          <tr><td><strong>CT</strong><span>Connecticut</span></td><td>Marketplace and Medicaid catalogs</td><td>Access Health CT plan directory</td><td><a href="https://www.accesshealthct.com/" target="_blank" rel="noreferrer">Open source <span>↗</span></a></td></tr>
+          <tr><td><strong>ME</strong><span>Maine</span></td><td>Marketplace and Medicaid catalogs</td><td>CoverME.gov carrier directory</td><td><a href="https://www.coverme.gov/" target="_blank" rel="noreferrer">Open source <span>↗</span></a></td></tr>
+          <tr><td><strong>MA</strong><span>Massachusetts</span></td><td>Marketplace and Medicaid catalogs</td><td>Health Connector plan directory</td><td><a href="https://www.mahealthconnector.org/" target="_blank" rel="noreferrer">Open source <span>↗</span></a></td></tr>
+          <tr><td><strong>NH</strong><span>New Hampshire</span></td><td><em>Detailed</em> plan-level cost sharing</td><td>Marketplace carrier catalog</td><td><a href="https://data.healthcare.gov/dataset/57b37731-ceda-48d0-a467-0c8f044e8f18" target="_blank" rel="noreferrer">Open dataset <span>↗</span></a></td></tr>
+          <tr><td><strong>RI</strong><span>Rhode Island</span></td><td><em>Detailed</em> plan-level cost sharing</td><td>HealthSource RI plan directory</td><td><a href="https://healthsourceri.com/coverage-through-healthsource-ri/" target="_blank" rel="noreferrer">Open source <span>↗</span></a></td></tr>
+          <tr><td><strong>VT</strong><span>Vermont</span></td><td>Marketplace and Medicaid catalogs</td><td>Vermont Health Connect directory</td><td><a href="https://info.healthconnect.vermont.gov/" target="_blank" rel="noreferrer">Open source <span>↗</span></a></td></tr>
+        </tbody></table></div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="shell footer-grid">
+      <div class="footer-brand"><span class="brandmark">P</span><div><strong>Pazeratechnologies</strong><a href="mailto:pazeratechnology@gmail.com">pazeratechnology@gmail.com</a></div></div>
+      <div class="fineprint"><strong>Important information</strong><p>This website provides general information collected from public sources. It is not medical, legal, insurance, or financial advice and does not determine eligibility or guarantee coverage, reimbursement, prices, prior authorization, network status, or payment of a claim. Information can be incomplete or change without notice. Always confirm details with your insurer, provider, member portal, and official plan documents before making a healthcare or purchasing decision. Linked supporting documents are provided so you can review the original source.</p><p>Pazeratechnologies is not an insurer, healthcare provider, broker, or government agency and is not affiliated with or endorsed by the insurance companies shown. Insurance company names, plan names, logos, and other third-party marks belong to their respective owners and are used only for identification.</p></div>
+    </div>
+    <div class="shell footer-bottom"><span>© 2026 Pazeratechnologies. All rights reserved.</span><span>Public information navigator for New England health plans.</span></div>
+  </footer>
+  <script src="app.js" defer></script>
+</body>
+</html>
