@@ -1,0 +1,404 @@
+import re
+
+print("Updating Marketplace HTML layout for State-First hierarchy & Amazon-style Checkout Review...")
+
+html_content = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pazeratechnologies Health Benefit Marketplace · Benefit Card Navigator</title>
+  <meta name="description" content="Searchable, plan-specific healthcare benefits marketplace. Select your state, plan type, and exact health insurance card to verify covered products, services, and benefits across 34 departments.">
+  <link rel="stylesheet" href="/marketplace/marketplace.css">
+</head>
+<body class="marketplace-page">
+  <!-- Topbar Navigation -->
+  <header class="topbar">
+    <a href="/" class="brand">
+      <span class="brandmark">B</span>
+      <span class="brand-copy">
+        <strong>Benefit Card Navigator</strong>
+        <small>Pazeratechnologies Insurance Marketplace</small>
+      </span>
+    </a>
+    <nav class="header-utility" aria-label="Main Navigation">
+      <a href="/find-care/doctors/">Find a Doctor</a>
+      <a href="/find-care/dentists/">Find a Dentist</a>
+      <a href="/find-care/eye-doctors/">Find an Eye Doctor</a>
+      <a href="/marketplace/" class="active">Marketplace</a>
+      <button type="button" id="navCheckoutBtn" class="topbar-checkout-btn">
+        🛒 Review &amp; Request (Checkout) <span id="slipCountBadge" class="cart-badge-count">0</span>
+      </button>
+      <a href="/find-care/#sources" class="nav-sources">Data &amp; Sources</a>
+    </nav>
+  </header>
+
+  <!-- Marketplace Hero Banner -->
+  <section class="market-hero-banner">
+    <div class="market-shell" style="padding:0">
+      <div class="market-hero-inner">
+        <div class="market-hero-copy">
+          <span class="hero-badge">
+            Rhode Island &amp; New England Health Benefit Marketplace
+          </span>
+          <h1>Amazon for Things Your Health Insurance May Pay For</h1>
+          <p>
+            Select your state first, then plan category (Medicare, Medicaid, or Commercial), and choose your exact insurance card to discover verified products, services, and plan benefits across 34 healthcare departments.
+          </p>
+          <div class="hero-action-buttons">
+            <button type="button" class="hero-form-btn" id="heroCheckoutBtn">
+              🛒 Review &amp; Provider Request (Checkout)
+            </button>
+            <a href="#catalogAnchor" class="hero-form-btn" style="background:rgba(255,255,255,0.18);color:#fff;text-decoration:none">
+              🔍 Search Catalog
+            </a>
+          </div>
+        </div>
+
+        <div class="market-callout-card">
+          <h3><span>📍</span> State-First Coverage Verification</h3>
+          <p style="font-size:13px;line-height:1.5;margin:6px 0 10px;color:#e1eee9">
+            Selecting your state dictates available health plans and coverage protocols. Coverage rules link directly to official Evidence of Coverage, Formularies, or State Medicaid documents.
+          </p>
+          <small style="color:#d5e5df;font-size:11px;display:block">
+            ✓ Rhode Island First (BCBSRI, Neighborhood, RI Medicaid, UHC) · Scalable to MA, CT, NH, VT, ME
+          </small>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- State-First, Category & Specific Plan Selector Strip -->
+  <section class="plan-selector-strip">
+    <div class="market-shell" style="padding:0">
+      <div class="plan-selector-grid">
+        <!-- 1. State Selection (First) -->
+        <div class="filter-select-group highlight-group">
+          <label for="stateSelect"><strong>1. Select State:</strong></label>
+          <select id="stateSelect" class="plan-dropdown">
+            <option value="RI" selected>Rhode Island (RI)</option>
+            <option value="MA">Massachusetts (MA)</option>
+            <option value="CT">Connecticut (CT)</option>
+            <option value="NH">New Hampshire (NH)</option>
+            <option value="VT">Vermont (VT)</option>
+            <option value="ME">Maine (ME)</option>
+          </select>
+        </div>
+
+        <!-- 2. Insurance Category / Plan Type (Second) -->
+        <div class="filter-select-group highlight-group">
+          <label for="planTypeSelect"><strong>2. Insurance Category:</strong></label>
+          <select id="planTypeSelect" class="plan-dropdown">
+            <option value="all">All Plan Categories</option>
+            <option value="Medicare Advantage" selected>Medicare (Medicare Advantage / D-SNP)</option>
+            <option value="Medicaid">Medicaid (State &amp; Managed Care)</option>
+            <option value="Commercial">Regular Commercial Insurance</option>
+          </select>
+        </div>
+
+        <!-- 3. Insurer & Specific Plan (Third) -->
+        <div class="filter-select-group highlight-group">
+          <label for="planSelect"><strong>3. Specific Insurance Card / Plan:</strong></label>
+          <select id="planSelect" class="plan-dropdown">
+            <option value="bcbsri_bluechip_core_2026">BCBSRI — BlueCHiP for Medicare Core (2026)</option>
+            <option value="neighborhood_integra_2026">Neighborhood — INTEGRIA D-SNP (2026)</option>
+            <option value="ri_medicaid_managed_2026">RI Medicaid — EOHHS Managed Care (2026)</option>
+            <option value="uhc_medicare_dual_2026">UnitedHealthcare — Dual Complete RI (2026)</option>
+            <option value="generic_unselected_plan">Generic / Unselected Plan (Needs Verification)</option>
+          </select>
+        </div>
+
+        <div class="plan-status-indicator" id="planStatusIndicator">
+          <span class="plan-status-pill" id="planStatusPill">✓ RI Active Plan</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Search Strip & Category Bar -->
+  <div class="search-strip-wrap" id="catalogAnchor">
+    <div class="market-shell" style="padding:0">
+      
+      <div class="search-strip">
+        <div class="market-search-box">
+          <input
+            type="search"
+            id="marketSearchInput"
+            class="market-search-input"
+            placeholder="Search catalog (e.g. 'vitamin d', 'Acetaminophen', 'knee brace', 'BP monitor', 'test strips', 'dental', 'ride')..."
+            aria-label="Search marketplace products"
+          >
+          <button type="button" class="search-icon-btn" aria-label="Submit search">🔍</button>
+        </div>
+
+        <button type="button" id="triggerReviewTabBtn" class="cart-summary-trigger">
+          <span>🛒 Review (Checkout)</span>
+          <span id="slipCountBadge2" class="cart-badge-count">0</span>
+        </button>
+      </div>
+
+      <!-- Quick Department Category Pills -->
+      <div class="category-pills-bar" id="categoryPillsBar" role="tablist" aria-label="Product departments">
+        <!-- JS injects department pills -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Marketplace Workspace -->
+  <main class="market-shell">
+    <div class="market-layout">
+      <!-- Left Filter Sidebar -->
+      <aside class="market-sidebar" aria-label="Catalog filters">
+        <div class="filter-group">
+          <h4>Coverage Status</h4>
+          <div class="filter-checkbox-list">
+            <label class="filter-checkbox-label">
+              <input type="radio" name="sideStatus" value="all" checked>
+              <span>All Statuses</span>
+            </label>
+            <label class="filter-checkbox-label">
+              <input type="radio" name="sideStatus" value="Covered">
+              <span style="color:#0d6b63;font-weight:700">✓ Verified Covered</span>
+            </label>
+            <label class="filter-checkbox-label">
+              <input type="radio" name="sideStatus" value="Conditional">
+              <span style="color:#8a5d00;font-weight:700">⚠️ Conditional</span>
+            </label>
+            <label class="filter-checkbox-label">
+              <input type="radio" name="sideStatus" value="Unknown / needs verification">
+              <span style="color:#b25900;font-weight:700">❓ Needs Verification</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <h4>Benefit Pathway</h4>
+          <div class="filter-checkbox-list">
+            <label class="filter-checkbox-label">
+              <input type="radio" name="sidePathway" value="all" checked>
+              <span>All Pathways</span>
+            </label>
+            <label class="filter-checkbox-label">
+              <input type="radio" name="sidePathway" value="OTC allowance">
+              <span style="color:#133e33;font-weight:700">💳 OTC Allowance</span>
+            </label>
+            <label class="filter-checkbox-label">
+              <input type="radio" name="sidePathway" value="Prescription/pharmacy benefit">
+              <span style="color:#1e4b85;font-weight:700">💊 Pharmacy Benefit</span>
+            </label>
+            <label class="filter-checkbox-label">
+              <input type="radio" name="sidePathway" value="Durable Medical Equipment (DME)">
+              <span style="color:#5b2382;font-weight:700">🩺 Medical / DME</span>
+            </label>
+            <label class="filter-checkbox-label">
+              <input type="radio" name="sidePathway" value="Preventive-care benefit">
+              <span style="color:#0d6b63;font-weight:700">🌸 Preventive Care</span>
+            </label>
+            <label class="filter-checkbox-label">
+              <input type="radio" name="sidePathway" value="Healthy Food / Grocery Benefits">
+              <span style="color:#8a5d00;font-weight:700">🍎 Healthy Food / SSBCI</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <h4>Coverage Requirements</h4>
+          <div class="filter-checkbox-list">
+            <label class="filter-checkbox-label">
+              <input type="checkbox" id="chkZeroCost">
+              <span>$0 Member Cost Only</span>
+            </label>
+            <label class="filter-checkbox-label">
+              <input type="checkbox" id="chkOtcEligible">
+              <span>OTC Allowance Eligible</span>
+            </label>
+            <label class="filter-checkbox-label">
+              <input type="checkbox" id="chkRxRequired">
+              <span>Prescription Required</span>
+            </label>
+            <label class="filter-checkbox-label">
+              <input type="checkbox" id="chkOrderRequired">
+              <span>Provider Order Required</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <h4>34 Healthcare Departments</h4>
+          <div class="filter-checkbox-list" id="sidebarCategoryList" style="max-height:360px;overflow-y:auto;padding-right:4px">
+            <!-- JS injects department choices -->
+          </div>
+        </div>
+      </aside>
+
+      <!-- Center Product Grid (Expanded Width) -->
+      <section class="market-catalog-area">
+        <div class="product-grid-header">
+          <div id="productCountLabel" class="product-count-label">
+            Loading marketplace catalog...
+          </div>
+        </div>
+
+        <div id="productGrid" class="product-grid" aria-live="polite">
+          <!-- Populated dynamically by marketplace.js -->
+        </div>
+      </section>
+
+      <!-- Right Panel: Side Slip Preview & Quick Checkout Trigger -->
+      <aside class="order-slip-panel" aria-label="Order & Request Slips Summary">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <h3 style="margin:0">Requested Slips</h3>
+        </div>
+        <p style="font-size:12px;color:#cbe0d9;margin:4px 0 14px">
+          Items added for your provider request &amp; plan order:
+        </p>
+
+        <div id="callSlipContainer">
+          <!-- Populated dynamically by marketplace.js -->
+        </div>
+
+        <div style="margin-top:16px">
+          <button type="button" id="sideCheckoutBtn" class="checkout-review-btn">
+            🛒 Review &amp; Request (Checkout)
+          </button>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- Amazon-Style Review & Provider Request Checkout Modal -->
+  <div id="checkoutModal" class="checkout-modal-overlay" style="display:none">
+    <div class="checkout-modal-content">
+      <div class="checkout-modal-header">
+        <h2>🛒 Review &amp; Provider Request (Checkout)</h2>
+        <button type="button" class="close-modal-btn" id="closeCheckoutModalBtn">&times;</button>
+      </div>
+
+      <div class="checkout-modal-body">
+        <div class="checkout-grid">
+          <!-- Left Column: Items Requested List under Selected Plan -->
+          <div class="checkout-items-section">
+            <h3>1. Requested Items &amp; Benefits under Your Plan</h3>
+            <div id="checkoutItemsList" class="checkout-items-list">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+          <!-- Right Column: Verification of PCP & Patient Information -->
+          <div class="checkout-form-section">
+            <h3>2. Verify PCP &amp; Patient Information</h3>
+            <form id="providerCheckoutForm" onsubmit="return false;">
+              
+              <!-- Plan Prepopulated Banner -->
+              <div class="checkout-plan-summary" id="checkoutPlanSummary">
+                <!-- JS prepopulates selected state, insurer, and plan -->
+              </div>
+
+              <div class="form-section-title">Primary Care Physician (PCP) Verification</div>
+              <div class="form-row">
+                <div class="form-field">
+                  <label for="pcpName">PCP / Doctor Name *</label>
+                  <input type="text" id="pcpName" required placeholder="Dr. Robert Smith, MD">
+                </div>
+                <div class="form-field">
+                  <label for="practiceName">Practice / Clinic Name *</label>
+                  <input type="text" id="practiceName" required placeholder="Providence Primary Care">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-field">
+                  <label for="pcpAddress">PCP Office Address *</label>
+                  <input type="text" id="pcpAddress" required placeholder="123 Medical Center Way, Providence, RI 02903">
+                </div>
+                <div class="form-field">
+                  <label for="pcpPhone">PCP Office Phone *</label>
+                  <input type="tel" id="pcpPhone" required placeholder="(401) 274-1100">
+                </div>
+              </div>
+
+              <div class="form-section-title">Patient Details (Must Match PCP Records)</div>
+              <div class="form-row">
+                <div class="form-field">
+                  <label for="patientName">Patient Full Name *</label>
+                  <input type="text" id="patientName" required placeholder="Jane Doe">
+                </div>
+                <div class="form-field">
+                  <label for="patientDob">Date of Birth (DOB) *</label>
+                  <input type="date" id="patientDob" required>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-field">
+                  <label for="patientAddress">Patient Street Address *</label>
+                  <input type="text" id="patientAddress" required placeholder="456 Elmwood Ave, Cranston, RI 02910">
+                </div>
+                <div class="form-field">
+                  <label for="patientPhone">Patient Phone Number *</label>
+                  <input type="tel" id="patientPhone" required placeholder="(401) 555-0192">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-field">
+                  <label for="memberId">Insurance Member ID *</label>
+                  <input type="text" id="memberId" required placeholder="XYZ987654321">
+                </div>
+                <div class="form-field">
+                  <label for="patientReason">Reason for Request / Clinical Note</label>
+                  <input type="text" id="patientReason" placeholder="e.g. Requesting prescription or OTC coverage confirmation">
+                </div>
+              </div>
+
+              <!-- Disclaimers & Consents -->
+              <div class="checkout-disclaimers">
+                <label class="consent-checkbox">
+                  <input type="checkbox" id="chkDisclaimer" required>
+                  <span>I understand that submitting this request does not guarantee a prescription, medical order, or insurance coverage. My provider determines medical appropriateness.</span>
+                </label>
+                <label class="consent-checkbox">
+                  <input type="checkbox" id="chkConsent" required>
+                  <span>I authorize my selected provider and practice staff to contact me regarding this request.</span>
+                </label>
+              </div>
+
+              <div class="checkout-action-row">
+                <button type="submit" id="submitCheckoutBtn" class="submit-request-btn">
+                  🚀 Submit Request to Provider Workspace
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Marketplace Footer & Mandatory Legal Disclaimer -->
+  <footer style="background:#fff;border-top:1px solid var(--line);padding:32px 0;margin-top:40px;color:var(--text-muted);font-size:12px">
+    <div class="market-shell" style="padding:0">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:18px">
+        <div style="max-width:760px">
+          <strong style="color:var(--green-dark);font-size:14px">Benefit Card Navigator · Pazeratechnologies Marketplace</strong>
+          <p style="margin:6px 0 0;line-height:1.6;color:var(--text-muted)">
+            Marketplace coverage information is based on publicly available plan documents and does not guarantee coverage or payment. Your healthcare provider determines whether a requested product or service is medically appropriate. Your health plan determines final eligibility and reimbursement.
+          </p>
+        </div>
+        <div style="display:flex;gap:18px">
+          <a href="/find-care/doctors/" style="color:var(--terracotta);text-decoration:none">Find a Doctor</a>
+          <a href="/find-care/dentists/" style="color:var(--terracotta);text-decoration:none">Find a Dentist</a>
+          <a href="/find-care/eye-doctors/" style="color:var(--terracotta);text-decoration:none">Find an Eye Doctor</a>
+          <a href="/find-care/#sources" style="color:var(--green-dark);text-decoration:underline">Sources</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Marketplace Logic Script -->
+  <script src="/marketplace/marketplace.js"></script>
+</body>
+</html>
+"""
+
+with open('dist/marketplace/index.html', 'w', encoding='utf-8') as f:
+    f.write(html_content)
+
+print("Updated dist/marketplace/index.html successfully!")

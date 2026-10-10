@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta name="robots" content="noindex,nofollow"/>
+  <title>Practice Inquiry Portal · Prototype</title>
+  <link rel="stylesheet" href="/styles.css"/>
+  <link rel="stylesheet" href="/portal.css"/>
+</head>
+<body class="portal-body">
+  <header class="portal-header">
+    <a class="portal-brand" href="/" aria-label="Return to Benefit Card Navigator">
+      <span class="brandmark">P</span>
+      <span class="brand-copy">
+        <strong>Practice Inquiry Portal</strong>
+        <small>Coastal Medical Group · RI-PRAC-014</small>
+      </span>
+    </a>
+    <div class="portal-session-info">
+      <div class="session-user-badge">
+        <strong>Sarah Jenkins, RN</strong>
+        <small>Practice Coordinator · Authenticated</small>
+      </div>
+      <span class="demo-flag">SYNTHETIC DATA ONLY</span>
+    </div>
+  </header>
+
+  <main class="portal-shell">
+    <nav class="portal-nav-links" aria-label="Portal section navigation">
+      <a href="/find-care/">← Provider Directory</a>
+      <a href="/practice/" class="active">Practice Queue</a>
+      <a href="/operations/">Owner Operations Pipeline →</a>
+    </nav>
+
+    <section class="portal-heading">
+      <div>
+        <span class="eyebrow">Practice Triage Queue</span>
+        <h1>Today’s Patient Inquiries</h1>
+        <p>Review new requests, call patients, and record outreach outcomes. Working records and clinical notes remain within the practice-controlled local environment.</p>
+      </div>
+    </section>
+
+    <!-- 4 Status Metric Cards -->
+    <section class="metric-grid" aria-label="Inquiry summary metrics">
+      <article class="metric-card red">
+        <div class="metric-card-top">
+          <span class="status-dot red"></span>
+          <span class="metric-icon">🔴</span>
+        </div>
+        <strong id="countRed">0</strong>
+        <p>New — call needed</p>
+      </article>
+
+      <article class="metric-card yellow">
+        <div class="metric-card-top">
+          <span class="status-dot yellow"></span>
+          <span class="metric-icon">🟡</span>
+        </div>
+        <strong id="countYellow">0</strong>
+        <p>Outreach attempted (no answer)</p>
+      </article>
+
+      <article class="metric-card green">
+        <div class="metric-card-top">
+          <span class="status-dot green"></span>
+          <span class="metric-icon">🟢</span>
+        </div>
+        <strong id="countGreen">0</strong>
+        <p>Patient reached / handled</p>
+      </article>
+
+      <article class="metric-card blue">
+        <div class="metric-card-top">
+          <span class="status-dot blue"></span>
+          <span class="metric-icon">🔵</span>
+        </div>
+        <strong id="countBlue">0</strong>
+        <p>Appointment made</p>
+      </article>
+    </section>
+
+    <section class="status-key" aria-label="Workflow status key">
+      <span class="status-key-label">Status Key:</span>
+      <span class="status-pill-badge red"><span>🔴</span><span>New — Call Needed</span></span>
+      <span class="status-pill-badge yellow"><span>🟡</span><span>Outreach Attempted (No Answer)</span></span>
+      <span class="status-pill-badge green"><span>🟢</span><span>Patient Reached / Request Handled</span></span>
+      <span class="status-pill-badge blue"><span>🔵</span><span>Appointment Made</span></span>
+    </section>
+
+    <div class="portal-layout">
+      <section>
+        <div class="queue-controls">
+          <input type="search" id="queueSearch" class="queue-search" placeholder="Search queue by patient, ID, or service…"/>
+          <select id="queueFilterSelect" class="queue-filter-select" aria-label="Filter queue by status">
+            <option value="all">All Statuses</option>
+            <option value="red">🔴 New — call needed</option>
+            <option value="yellow">🟡 Outreach attempted</option>
+            <option value="green">🟢 Patient reached</option>
+            <option value="blue">🔵 Appointment made</option>
+          </select>
+        </div>
+
+        <div id="practiceQueue" class="practice-queue" aria-live="polite"></div>
+      </section>
+
+      <aside class="local-record-panel" aria-label="Local patient record panel">
+        <span class="eyebrow">Local Practice Record</span>
+        <h2 id="recordTitle">Select an inquiry</h2>
+        
+        <div id="recordDetail" class="record-detail">
+          <p style="color:var(--text-muted);font-size:13px">Choose an inquiry from the queue to review patient details and update outreach status.</p>
+        </div>
+
+        <div class="timeline-section">
+          <h4>
+            <span>Append-Only History Log</span>
+            <span class="audit-badge">Audited</span>
+          </h4>
+          <div id="historyContainer"></div>
+        </div>
+
+        <div class="local-notes-box">
+          <label for="localNotes">Practice Clinical &amp; Operational Notes</label>
+          <textarea id="localNotes" rows="5" disabled placeholder="Notes remain securely in the practice's local environment."></textarea>
+        </div>
+
+        <button id="downloadRecord" class="secondary-button" type="button" disabled style="width:100%">
+          Download Local Record (JSON)
+        </button>
+
+        <div class="architecture-notice">
+          <strong>🔒 Practice Local System Architecture</strong>
+          In production, this panel interfaces with the practice's encrypted local database (PostgreSQL/SQLite with AES-256) inside the local practice network. Inquiries are purged from the central delivery queue immediately upon confirmed local receipt. The system scales to several thousand patients with verified backups, recovery procedures, and immutable audit logs.
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <script src="/practice.js" defer></script>
+</body>
+</html>

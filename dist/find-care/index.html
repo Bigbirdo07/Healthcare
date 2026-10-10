@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta name="description" content="Search source-labeled public provider information across New England. Find doctors, dentists, and eye doctors with clear data boundaries."/>
+  <title>Find Care · Benefit Card Navigator</title>
+  <link rel="stylesheet" href="/styles.css"/>
+  <link rel="stylesheet" href="/provider-directory.css"/>
+</head>
+<body class="provider-directory-page" data-provider-type="doctor">
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Benefit Card Navigator homepage">
+      <span class="brandmark">P</span>
+      <span class="brand-copy">
+        <strong>Benefit Card Navigator</strong>
+        <small>by Pazeratechnologies</small>
+      </span>
+    </a>
+    <nav class="header-utility" aria-label="Utility navigation">
+      <a class="nav-provider" href="/find-care/doctors/">Find a Doctor</a>
+      <a class="nav-provider" href="/find-care/dentists/">Find a Dentist</a>
+      <a class="nav-provider" href="/find-care/eye-doctors/">Find a Eye doctor</a>
+      <a class="nav-provider" href="/marketplace/">Marketplace</a>
+      <a class="nav-sources" href="/#sources">About the data &amp; sources</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="provider-finder provider-route-page" aria-labelledby="providerFinderTitle">
+      <div class="shell">
+        <div class="provider-intro">
+          <div>
+            <span id="providerEyebrow" class="eyebrow">New England care directory</span>
+            <h1 id="providerFinderTitle">Find a doctor.</h1>
+          </div>
+          <p id="providerIntro">
+            Search doctors, clinicians, dentists, and eye care specialists across New England. Results display source-supported Medicare Care Compare and historical Medicaid enrollment information through December 31, 2024. Confirm current licensure, exact network tiers, and appointment availability directly with the practice.
+          </p>
+        </div>
+
+        <nav class="provider-tabs" aria-label="Provider directories">
+          <a class="provider-tab active" data-provider-type="doctor" href="/find-care/doctors/">
+            <span class="tab-icon">🩺</span>
+            <span>Find a Doctor</span>
+          </a>
+          <a class="provider-tab" data-provider-type="dentist" href="/find-care/dentists/">
+            <span class="tab-icon">🦷</span>
+            <span>Find a Dentist</span>
+          </a>
+          <a class="provider-tab" data-provider-type="eye" href="/find-care/eye-doctors/">
+            <span class="tab-icon">👁️</span>
+            <span>Find an Eye Doctor</span>
+          </a>
+        </nav>
+
+        <div class="provider-workspace">
+          <div class="provider-directory">
+            <div class="provider-filters" aria-label="Provider search and filters">
+              <div class="field">
+                <label for="providerState">State</label>
+                <select id="providerState">
+                  <option value="CT">Connecticut</option>
+                  <option value="ME">Maine</option>
+                  <option value="MA">Massachusetts</option>
+                  <option value="NH">New Hampshire</option>
+                  <option value="RI" selected>Rhode Island</option>
+                  <option value="VT">Vermont</option>
+                  <option value="NY">New York</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="providerSearch">Search Directory</label>
+                <input id="providerSearch" type="search" placeholder="Search by name, specialty, practice, city, or ZIP"/>
+              </div>
+
+              <div class="field">
+                <label for="providerSpecialty">Specialty</label>
+                <select id="providerSpecialty">
+                  <option value="all">All Specialties</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="providerCoverage">Coverage Evidence</label>
+                <select id="providerCoverage">
+                  <option value="all">All Records</option>
+                  <option value="medicare">Listed in Medicare Care Compare</option>
+                  <option value="medicare_assignment">Accepts Medicare Assignment (RI data)</option>
+                  <option value="medicaid_active">Historical Medicaid Active (through 2024)</option>
+                  <option value="medicaid_all">Any Medicaid Segment Record</option>
+                </select>
+              </div>
+
+              <div class="provider-filters-row2">
+                <div class="field">
+                  <label for="filterNetwork">Insurance Network</label>
+                  <select id="filterNetwork" disabled title="Commercial and Medicaid Managed Care plan networks are unverified in this public baseline. Confirm with your health plan.">
+                    <option>Network data pending</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label for="filterNewPatients">New Patients</label>
+                  <select id="filterNewPatients" disabled title="Acceptance of new patients is not verified in the federal baseline. Always call practice to confirm.">
+                    <option>New patient data pending</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label for="filterClinicianLang">Clinician Language</label>
+                  <select id="filterClinicianLang" disabled title="Clinician language data is pending verification. Never inferred from clinician name or photo.">
+                    <option>Language data pending</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label for="filterAccessibility">Accessibility</label>
+                  <select id="filterAccessibility" disabled title="Physical accessibility data pending practice documentation.">
+                    <option>Accessibility data pending</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="check-filter-group">
+                <label class="check-filter">
+                  <input id="telehealthFilter" type="checkbox"/>
+                  <span>Telehealth documented</span>
+                </label>
+                <label class="check-filter disabled" title="Staff language data is pending practice verification.">
+                  <input type="checkbox" disabled/>
+                  <span>Office staff language pending</span>
+                </label>
+                <label class="check-filter disabled" title="Interpreter service availability is pending practice documentation.">
+                  <input type="checkbox" disabled/>
+                  <span>Interpreter services pending</span>
+                </label>
+              </div>
+            </div>
+
+            <div id="providerDataNotice" class="data-notice" role="status" aria-live="polite"></div>
+
+            <div id="providerGrid" class="provider-grid" aria-live="polite"></div>
+
+            <div id="loadMoreContainer"></div>
+          </div>
+
+          <aside class="care-list" aria-label="Care List and inquiry preparation">
+            <span class="eyebrow">Your Care List</span>
+            <h3>Prepare an Inquiry</h3>
+            <div id="careListContainer"></div>
+          </aside>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="shell footer-bottom">
+      <span>© 2026 Pazeratechnologies. Separate provider discovery and care-inquiry prototype.</span>
+      <a href="/">Return to Benefit Marketplace</a>
+    </div>
+  </footer>
+
+  <script src="/provider-page.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta name="robots" content="noindex,nofollow"/>
+  <title>Inquiry Operations · Owner Analytics Prototype</title>
+  <link rel="stylesheet" href="/styles.css"/>
+  <link rel="stylesheet" href="/portal.css"/>
+  <link rel="canonical" href="/operations/"/>
+</head>
+<body class="portal-body">
+  <header class="portal-header">
+    <a class="portal-brand" href="/" aria-label="Return to Benefit Card Navigator">
+      <span class="brandmark">P</span>
+      <span class="brand-copy">
+        <strong>Inquiry Operations Dashboard</strong>
+        <small>Owner Operational &amp; Status Pipeline</small>
+      </span>
+    </a>
+    <div class="portal-session-info">
+      <div class="session-user-badge">
+        <strong>Executive Operations</strong>
+        <small>Owner-Only · Private Reporting</small>
+      </div>
+      <span class="demo-flag privacy-flag">🛡️ ZERO PHI / PSEUDONYMOUS</span>
+    </div>
+  </header>
+
+  <main class="portal-shell">
+    <nav class="portal-nav-links" aria-label="Portal section navigation">
+      <a href="/find-care/">← Provider Directory</a>
+      <a href="/practice/">Practice Queue →</a>
+      <a href="/operations/" class="active">Owner Operations Pipeline</a>
+    </nav>
+
+    <div class="privacy-banner" role="region" aria-label="Privacy guarantee">
+      <strong>🛡️ Data Boundary &amp; Privacy Architecture Guarantee</strong>
+      This private pipeline receives only minimal pseudonymous status events. Under no circumstances are patient names, phone numbers, dates of birth, clinical notes, free text, or exact appointment details transmitted to owner reporting, analytics, or external sheets. This complies strictly with the minimum-necessary data principle.
+    </div>
+
+    <section class="portal-heading">
+      <div>
+        <span class="eyebrow">Operational Metrics</span>
+        <h1>Daily Inquiry Pipeline</h1>
+        <p>Real-time status transitions, outreach speed, and conversion metrics aggregated across New England practice nodes.</p>
+      </div>
+      <div class="date-control">
+        <label for="reportingDate" style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase">Reporting Date</label>
+        <input type="date" id="reportingDate" value="2026-09-24" style="height:38px;padding:0 10px;border:1px solid var(--line);border-radius:6px;background:#fff;font-weight:600"/>
+      </div>
+    </section>
+
+    <!-- 4 Status Metric Totals -->
+    <section class="metric-grid" aria-label="Operational KPI summary">
+      <article class="metric-card red">
+        <div class="metric-card-top">
+          <span class="status-dot red"></span>
+          <span class="metric-icon">🔴</span>
+        </div>
+        <strong id="kpiRed">18</strong>
+        <p>New inquiries (call needed)</p>
+      </article>
+
+      <article class="metric-card yellow">
+        <div class="metric-card-top">
+          <span class="status-dot yellow"></span>
+          <span class="metric-icon">🟡</span>
+        </div>
+        <strong id="kpiYellow">7</strong>
+        <p>Outreach attempts (no answer)</p>
+      </article>
+
+      <article class="metric-card green">
+        <div class="metric-card-top">
+          <span class="status-dot green"></span>
+          <span class="metric-icon">🟢</span>
+        </div>
+        <strong id="kpiGreen">12</strong>
+        <p>Patients reached / handled</p>
+      </article>
+
+      <article class="metric-card blue">
+        <div class="metric-card-top">
+          <span class="status-dot blue"></span>
+          <span class="metric-icon">🔵</span>
+        </div>
+        <strong id="kpiBlue">6</strong>
+        <p>Appointments converted</p>
+      </article>
+    </section>
+
+    <!-- Secondary Operational Performance KPIs -->
+    <section class="metric-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 24px" aria-label="Performance indicators">
+      <article class="metric-card" style="border-left:4px solid var(--green-dark)">
+        <span class="eyebrow" style="margin:0">Median Response Time</span>
+        <strong style="font-size:32px;margin:8px 0 2px">24 min</strong>
+        <p>Time from inquiry to first outreach attempt</p>
+      </article>
+
+      <article class="metric-card" style="border-left:4px solid var(--green-medium)">
+        <span class="eyebrow" style="margin:0">Median Resolution Time</span>
+        <strong style="font-size:32px;margin:8px 0 2px">2.1 hrs</strong>
+        <p>Time from inquiry to handled or scheduled</p>
+      </article>
+
+      <article class="metric-card" style="border-left:4px solid var(--status-blue)">
+        <span class="eyebrow" style="margin:0">Conversion Rate</span>
+        <strong style="font-size:32px;margin:8px 0 2px">33.3%</strong>
+        <p>Inquiries resulting in confirmed appointments</p>
+      </article>
+    </section>
+
+    <!-- Event Stream Table -->
+    <section class="operations-panel" aria-labelledby="streamHeading">
+      <div class="operations-panel-head">
+        <div>
+          <span class="eyebrow">Pseudonymous Status Stream</span>
+          <h2 id="streamHeading">Status Event Activity Log</h2>
+        </div>
+        <div class="ops-filter-bar">
+          <select id="filterCategory" aria-label="Filter by provider category">
+            <option value="all">All Categories</option>
+            <option value="doctor">Doctors / Clinicians</option>
+            <option value="dentist">Dentists</option>
+            <option value="eye">Eye Doctors</option>
+          </select>
+
+          <select id="filterPractice" aria-label="Filter by practice">
+            <option value="all">All Practices</option>
+            <option value="RI-PRAC-014">RI-PRAC-014 (Coastal Medical)</option>
+            <option value="RI-PRAC-006">RI-PRAC-006 (Providence Dental)</option>
+            <option value="RI-PRAC-021">RI-PRAC-021 (Warwick Vision)</option>
+          </select>
+
+          <button type="button" class="secondary-button" id="exportEventsBtn" style="min-height:38px;padding:0 14px;font-size:12px">
+            Export Event Log (CSV)
+          </button>
+        </div>
+      </div>
+
+      <div class="event-table-wrap">
+        <table class="event-table" id="eventTable">
+          <thead>
+            <tr>
+              <th>Event ID</th>
+              <th>Time</th>
+              <th>Anonymous Inquiry</th>
+              <th>Practice ID</th>
+              <th>Provider Category</th>
+              <th>Service Category</th>
+              <th>Previous Status</th>
+              <th>New Status</th>
+              <th>Appointment Made</th>
+            </tr>
+          </thead>
+          <tbody id="eventTableBody">
+            <!-- Populated via script -->
+          </tbody>
+        </table>
+      </div>
+
+      <p style="margin:16px 0 0;font-size:12px;color:var(--text-muted);line-height:1.5">
+        🔒 <strong>Pseudonymous Schema:</strong> <code>event_id, anonymous_inquiry_id, practice_id, provider_category, service_category, submitted_date, previous_status, new_status, event_timestamp, appointment_made</code>. Patient identity, phone numbers, dates of birth, notes, and appointment details are strictly omitted.
+      </p>
+    </section>
+  </main>
+
+  <script>
+    (function() {
+      const RAW_EVENTS = [
+        {
+          event_id: 'EVT-9812',
+          event_timestamp: '10:42:15 AM',
+          anonymous_inquiry_id: 'ANON-8F2A',
+          practice_id: 'RI-PRAC-014',
+          provider_category: 'doctor',
+          service_category: 'primary_care',
+          submitted_date: '2026-09-24',
+          previous_status: 'green',
+          new_status: 'blue',
+          appointment_made: true
+        },
+        {
+          event_id: 'EVT-9811',
+          event_timestamp: '10:31:02 AM',
+          anonymous_inquiry_id: 'ANON-22B7',
+          practice_id: 'RI-PRAC-006',
+          provider_category: 'dentist',
+          service_category: 'preventive_dental',
+          submitted_date: '2026-09-24',
+          previous_status: 'red',
+          new_status: 'green',
+          appointment_made: false
+        },
+        {
+          event_id: 'EVT-9810',
+          event_timestamp: '10:18:44 AM',
+          anonymous_inquiry_id: 'ANON-C103',
+          practice_id: 'RI-PRAC-021',
+          provider_category: 'eye',
+          service_category: 'routine_vision',
+          submitted_date: '2026-09-24',
+          previous_status: 'red',
+          new_status: 'yellow',
+          appointment_made: false
+        },
+        {
+          event_id: 'EVT-9809',
+          event_timestamp: '10:05:19 AM',
+          anonymous_inquiry_id: 'ANON-9D41',
+          practice_id: 'RI-PRAC-014',
+          provider_category: 'doctor',
+          service_category: 'primary_care',
+          submitted_date: '2026-09-24',
+          previous_status: 'none',
+          new_status: 'red',
+          appointment_made: false
+        },
+        {
+          event_id: 'EVT-9808',
+          event_timestamp: '09:48:30 AM',
+          anonymous_inquiry_id: 'ANON-41E9',
+          practice_id: 'RI-PRAC-014',
+          provider_category: 'doctor',
+          service_category: 'primary_care',
+          submitted_date: '2026-09-24',
+          previous_status: 'red',
+          new_status: 'yellow',
+          appointment_made: false
+        },
+        {
+          event_id: 'EVT-9807',
+          event_timestamp: '09:22:11 AM',
+          anonymous_inquiry_id: 'ANON-77A2',
+          practice_id: 'RI-PRAC-006',
+          provider_category: 'dentist',
+          service_category: 'preventive_dental',
+          submitted_date: '2026-09-24',
+          previous_status: 'green',
+          new_status: 'blue',
+          appointment_made: true
+        },
+        {
+          event_id: 'EVT-9806',
+          event_timestamp: '08:55:04 AM',
+          anonymous_inquiry_id: 'ANON-1B88',
+          practice_id: 'RI-PRAC-021',
+          provider_category: 'eye',
+          service_category: 'routine_vision',
+          submitted_date: '2026-09-24',
+          previous_status: 'red',
+          new_status: 'green',
+          appointment_made: false
+        },
+        {
+          event_id: 'EVT-9805',
+          event_timestamp: '08:35:00 AM',
+          anonymous_inquiry_id: 'ANON-33F0',
+          practice_id: 'RI-PRAC-014',
+          provider_category: 'doctor',
+          service_category: 'primary_care',
+          submitted_date: '2026-09-24',
+          previous_status: 'none',
+          new_status: 'red',
+          appointment_made: false
+        }
+      ];
+
+      const statusMap = {
+        none: '<span style="color:#8c9893">—</span>',
+        red: '<span class="status-pill-badge red"><span>🔴</span><span>New (Call needed)</span></span>',
+        yellow: '<span class="status-pill-badge yellow"><span>🟡</span><span>Outreach attempted</span></span>',
+        green: '<span class="status-pill-badge green"><span>🟢</span><span>Patient reached</span></span>',
+        blue: '<span class="status-pill-badge blue"><span>🔵</span><span>Appointment made</span></span>'
+      };
+
+      function renderTable() {
+        const cat = document.getElementById('filterCategory').value;
+        const prac = document.getElementById('filterPractice').value;
+
+        let filtered = RAW_EVENTS;
+        if (cat !== 'all') filtered = filtered.filter(e => e.provider_category === cat);
+        if (prac !== 'all') filtered = filtered.filter(e => e.practice_id === prac);
+
+        const tbody = document.getElementById('eventTableBody');
+        tbody.innerHTML = filtered.map(e => `
+          <tr>
+            <td style="font-family:ui-monospace,monospace;font-weight:700">${e.event_id}</td>
+            <td>${e.event_timestamp}</td>
+            <td class="anon-id">${e.anonymous_inquiry_id}</td>
+            <td><span class="practice-tag">${e.practice_id}</span></td>
+            <td>${e.provider_category.replace(/_/g, ' ')}</td>
+            <td>${e.service_category.replace(/_/g, ' ')}</td>
+            <td>${statusMap[e.previous_status] || e.previous_status}</td>
+            <td>${statusMap[e.new_status] || e.new_status}</td>
+            <td><strong>${e.appointment_made ? '✓ Yes (Converted)' : 'No'}</strong></td>
+          </tr>
+        `).join('');
+      }
+
+      document.getElementById('filterCategory').addEventListener('change', renderTable);
+      document.getElementById('filterPractice').addEventListener('change', renderTable);
+      renderTable();
+
+      document.getElementById('exportEventsBtn').addEventListener('click', function() {
+        const headers = ['event_id', 'anonymous_inquiry_id', 'practice_id', 'provider_category', 'service_category', 'submitted_date', 'previous_status', 'new_status', 'event_timestamp', 'appointment_made'];
+        const rows = RAW_EVENTS.map(e => [
+          e.event_id,
+          e.anonymous_inquiry_id,
+          e.practice_id,
+          e.provider_category,
+          e.service_category,
+          e.submitted_date,
+          e.previous_status,
+          e.new_status,
+          e.event_timestamp,
+          e.appointment_made ? 'true' : 'false'
+        ].join(','));
+        const csv = [headers.join(','), ...rows].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `pseudonymous-inquiry-events-${new Date().toISOString().slice(0,10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      });
+    })();
+  </script>
+</body>
+</html>

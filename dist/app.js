@@ -1,9 +1,9 @@
-let DATA,mode='commercial',currentState='',selectedPlan=null,activeCategory='All',marketView='covered';
+let DATA,VERIFIED=null,mode='commercial',currentState='',selectedPlan=null,activeCategory='All',marketView='covered';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const cleanIssuer=x=>x.replace(' from NH Healthy Families','').replace(' Blue Cross and Blue Shield',' Blue Cross Blue Shield');
 const planLabel=p=>p.state==='NH'?`${p.name} · ${p.id}`:p.name;
-fetch('data.json').then(r=>r.json()).then(d=>{DATA=d;init()}).catch(()=>{$('#lookupForm').innerHTML='<p>Benefit data could not be loaded.</p>'});
+Promise.all([fetch('data.json').then(r=>r.json()),fetch('ri_verified_cards.json').then(r=>r.ok?r.json():null).catch(()=>null)]).then(([d,v])=>{DATA=d;VERIFIED=v;init()}).catch(()=>{$('#lookupForm').innerHTML='<p>Benefit data could not be loaded.</p>'});
 function init(){
   $('#stateSelect').addEventListener('change',()=>{currentState=$('#stateSelect').value;setMode(mode)});
   $$('.segmented button').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.cover)));
@@ -15,6 +15,11 @@ function init(){
   setupReveal();setMode('commercial');
 }
 function commercialIssuers(){return [...new Set(DATA.plans.filter(p=>p.state===currentState).map(p=>p.issuer))].sort()}
+function verifiedPlans(card){return VERIFIED&&VERIFIED.state===currentState?VERIFIED.plans.filter(p=>p.card===card):[]}
+function medicarePlans(){return verifiedPlans('medicare')}
+// Evidence-backed listings for a homepage Medicaid option, when the marketplace has that plan.
+function verifiedMedicaid(key){const id=currentState==='RI'&&RI_MARKETPLACE.medicaid[key];return id?verifiedPlans('medicaid').find(p=>p.id===id):null}
+function medicareInsurers(){return [...new Set(medicarePlans().map(p=>p.insurer))]}
 function medicaidPlans(){return [...new Map(DATA.extras.filter(x=>x.coverage==='Medicaid'&&x.state===currentState).map(x=>[x.key,x.plan])).entries()]}
 function setMode(next){
   mode=next;selectedPlan=null;$$('.segmented button').forEach(b=>b.classList.toggle('active',b.dataset.cover===mode));
@@ -23,11 +28,17 @@ function setMode(next){
   if(!currentState){issuer.add(new Option('Choose your state first',''));issuer.disabled=true;plan.innerHTML='';plan.add(new Option('Choose your state first',''));plan.disabled=true;lookupButton.disabled=true;$('#planField').hidden=mode!=='commercial';$('#results').hidden=true;return}
   issuer.disabled=false;plan.disabled=false;lookupButton.disabled=false;
   if(mode==='commercial'){commercialIssuers().forEach(x=>issuer.add(new Option(cleanIssuer(x),x)));issuer.value=commercialIssuers().find(x=>x.includes('Anthem'))||commercialIssuers()[0];$('#planField').hidden=false;fillPlans()}
+  else if(mode==='medicare'){
+    const insurers=medicareInsurers();$('#planField').hidden=false;
+    if(!insurers.length){issuer.add(new Option('Medicare cards are available for Rhode Island','') );issuer.disabled=true;plan.innerHTML='';plan.disabled=true;lookupButton.disabled=true}
+    else{insurers.forEach(x=>issuer.add(new Option(x,x)));fillPlans()}
+  }
   else{medicaidPlans().forEach(([k,n])=>issuer.add(new Option(n,k)));$('#planField').hidden=true}
   $('#results').hidden=true;
 }
 function fillPlans(){
   const issuer=$('#issuerSelect').value,sel=$('#planSelect');sel.innerHTML='';
+  if(mode==='medicare'){medicarePlans().filter(p=>p.insurer===issuer).forEach(p=>sel.add(new Option(p.name,p.id)));updatePlanHelp();return}
   const plans=DATA.plans.filter(p=>p.state===currentState&&p.issuer===issuer).sort((a,b)=>a.name.localeCompare(b.name)||a.id.localeCompare(b.id));
   plans.forEach(p=>sel.add(new Option(planLabel(p),p.id)));
   sel.add(new Option('I’m not sure / My plan isn’t listed','__unsure__'));
@@ -41,27 +52,46 @@ function updatePlanHelp(){
 function lookup(e){
   e.preventDefault();
   if(mode==='commercial'&&$('#planSelect').value==='__unsure__'){$('#results').hidden=true;$('#planHelp').scrollIntoView({behavior:'smooth',block:'center'});return}
-  selectedPlan=mode==='commercial'?DATA.plans.find(p=>p.id===$('#planSelect').value):{id:$('#issuerSelect').value,name:$('#issuerSelect').selectedOptions[0].text,issuer:$('#issuerSelect').selectedOptions[0].text};
+  selectedPlan=mode==='commercial'?DATA.plans.find(p=>p.id===$('#planSelect').value):mode==='medicare'?medicarePlans().find(p=>p.id===$('#planSelect').value):{id:$('#issuerSelect').value,name:$('#issuerSelect').selectedOptions[0].text,issuer:$('#issuerSelect').selectedOptions[0].text};
   activeCategory='All';marketView='covered';$('#benefitSearch').value='';$('#results').hidden=false;$('#comparePanel').hidden=true;setMarketView('covered');
   $('.compare-invite').hidden=mode!=='commercial';
   renderHeader();renderSnapshot();renderCategories();renderMarketplace();requestAnimationFrame(()=>{observeNew();$('#results').scrollIntoView({behavior:'smooth',block:'start'})});
 }
 function selectedListings(){
-  if(mode==='medicaid')return DATA.extras.filter(x=>x.key===selectedPlan.id);
+  if(mode==='medicaid'){const v=verifiedMedicaid(selectedPlan.id),own=DATA.extras.filter(x=>x.key===selectedPlan.id);return v?[...own,...v.listings.map(x=>({...x,plan:v.name,coverage:'Medicaid'}))]:own}
+  if(mode==='medicare')return selectedPlan.listings.map(x=>({...x,plan:selectedPlan.name,coverage:'Medicare',requirements:x.requirements||'Confirm with the plan before relying on coverage.'}));
   const labels=selectedPlan.benefitLabels||DATA.benefitLabels;
   const core=labels.filter(l=>selectedPlan.benefits[l]?.covered).map(l=>({plan:selectedPlan.name,coverage:'Marketplace',category:categoryFor(l),benefit:l,value:costText(selectedPlan.benefits[l]),requirements:'Confirm network, authorization, exclusions and exact cost sharing in the official plan document.',url:selectedPlan.sbc}));
   return[...core,...commercialExtrasFor(selectedPlan)];
 }
 function commercialExtrasFor(p){return DATA.extras.filter(x=>x.state===p.state&&x.coverage==='Commercial'&&(p.issuer.startsWith('Ambetter')||p.name.includes(x.plan)||p.issuer.includes(x.plan)))}
+// Rhode Island cards that have item-by-item coverage in the marketplace
+// (/marketplace/). A plan listed twice in the state roster links to the
+// insurer so the member picks the exact variant there.
+const RI_MARKETPLACE={
+  plans:{'RI2026-002':'QHP:RI:15287RI1170003:2026','RI2026-003':'QHP:RI:15287RI1190002:2026','RI2026-004':'QHP:RI:77514RI0010005:2026','RI2026-005':'QHP:RI:15287RI1150002:2026','RI2026-006':'QHP:RI:15287RI1210002:2026','RI2026-007':'QHP:RI:15287RI1130002:2026','RI2026-008':'QHP:RI:77514RI0010010:2026','RI2026-009':'QHP:RI:15287RI0270004:2026','RI2026-010':'QHP:RI:15287RI0800001:2026','RI2026-011':'QHP:RI:15287RI0020006:2026','RI2026-012':'QHP:RI:15287RI1130001:2026','RI2026-014':'QHP:RI:77514RI0010002:2026','RI2026-015':'QHP:RI:15287RI0800003:2026','RI2026-017':'QHP:RI:77514RI0010004:2026','RI2026-018':'QHP:RI:77514RI0010006:2026'},
+  medicaid:{'RI-MED-NHPRI-ACCESS':'RIMCD:NHPRI:2026','RI-MED-NHPRI-TRUST':'RIMCD:NHPRI:2026','RI-MED-UHC-RITE':'RIMCD:UHC:2026','RI-MED-UHC-RHP':'RIMCD:UHC:2026','RI-MED-TUFTS':'RIMCD:TUFTS:2026'},
+  insurers:{'Blue Cross & Blue Shield of Rhode Island':'bcbsri','Neighborhood Health Plan of Rhode Island':'neighborhood'}
+};
+function marketplaceLink(){
+  if(currentState!=='RI'||!selectedPlan)return'';
+  const planId=mode==='commercial'?RI_MARKETPLACE.plans[selectedPlan.id]:mode==='medicare'?selectedPlan.id:RI_MARKETPLACE.medicaid[selectedPlan.id];
+  const q=new URLSearchParams({state:'RI',card_type:mode==='medicaid'?'MEDICAID_CARD':'INSURANCE_CARD'});
+  if(planId)q.set('plan_id',planId);
+  else if(mode==='commercial'&&RI_MARKETPLACE.insurers[selectedPlan.issuer])q.set('insurer_id',RI_MARKETPLACE.insurers[selectedPlan.issuer]);
+  else return'';
+  return`<a class="card-link" href="/marketplace/?${q}">See every item your card covers in the Marketplace →</a>`;
+}
 function renderHeader(){
-  const xs=selectedListings(),state=DATA.meta.stateNames?.[currentState]||currentState,issuer=mode==='commercial'?cleanIssuer(selectedPlan.issuer):state+' Medicaid';
-  $('#resultHeader').innerHTML=`<div><span class="eyebrow">${esc(state)} · Your selected card</span><h2>${esc(selectedPlan.name)}</h2><p>${esc(issuer)}</p><div class="selected-badges"><span class="pill">${mode==='commercial'?'Marketplace plan':'Managed Medicaid'}</span><span class="pill">Official sources linked below</span><span class="pill">Exact plan rules still apply</span></div></div><div class="card-score"><strong>${xs.length}</strong><span>publicly verified<br>listings found</span></div>`;
+  const xs=selectedListings(),state=DATA.meta.stateNames?.[currentState]||currentState,issuer=mode==='commercial'?cleanIssuer(selectedPlan.issuer):mode==='medicare'?selectedPlan.insurer:state+' Medicaid';
+  $('#resultHeader').innerHTML=`<div><span class="eyebrow">${esc(state)} · Your selected card</span><h2>${esc(selectedPlan.name)}</h2><p>${esc(issuer)}</p><div class="selected-badges"><span class="pill">${mode==='commercial'?'Marketplace plan':mode==='medicare'?'Medicare':'Managed Medicaid'}</span><span class="pill">Official sources linked below</span><span class="pill">Exact plan rules still apply</span></div>${marketplaceLink()}</div><div class="card-score"><strong>${xs.length}</strong><span>publicly verified<br>listings found</span></div>`;
 }
 function renderSnapshot(){
-  const listings=selectedListings(),core=mode==='commercial'?(selectedPlan.benefitLabels||DATA.benefitLabels).map(label=>({label,x:selectedPlan.benefits[label]||{}})):[];
-  const group=(label,test,filter)=>{const coreHits=core.filter(({label:l,x})=>x.covered&&test(l)),extraHits=listings.filter(x=>x.coverage!=='Marketplace'&&test(`${x.category} ${x.benefit}`));const total=coreHits.length+extraHits.length;return{label,category:filter,state:total?(extraHits.length&&!coreHits.length?'extra':'covered'):'not',detail:total?`${total} verified ${total===1?'listing':'listings'} found for this area`:'No coverage was found in this plan’s public data'}};
-  const medicalTest=s=>/preventive|doctor|primary|specialist|urgent|emergency|hospital|mental|therapy|rehabilitation|pharmacy|prescription|bariatric|chiropractic|acupuncture|hearing|nutrition/i.test(s);
-  const extraCount=listings.filter(x=>x.coverage!=='Marketplace').length;
+  // Verified Medicare/Medicaid listings are the plan's own coverage, not extras.
+  const listings=selectedListings(),verifiedListing=mode!=='commercial'&&listings.some(x=>x.evidence),core=mode==='commercial'?(selectedPlan.benefitLabels||DATA.benefitLabels).map(label=>({label,x:selectedPlan.benefits[label]||{}})):[];
+  const group=(label,test,filter)=>{const coreHits=core.filter(({label:l,x})=>x.covered&&test(l)),extraHits=listings.filter(x=>x.coverage!=='Marketplace'&&test(`${x.category} ${x.benefit}`));const total=coreHits.length+extraHits.length;return{label,category:filter,state:total?(extraHits.length&&!coreHits.length&&!verifiedListing?'extra':'covered'):'not',detail:total?`${total} verified ${total===1?'listing':'listings'} found for this area`:'No coverage was found in this plan’s public data'}};
+  const medicalTest=s=>/preventive|equipment|diabetes|transportation|doctor|primary|specialist|urgent|emergency|hospital|mental|therapy|rehabilitation|pharmacy|prescription|bariatric|chiropractic|acupuncture|hearing|nutrition/i.test(s);
+  const extraCount=listings.filter(x=>x.coverage!=='Marketplace'&&(!verifiedListing||x.category==='Everyday extras')).length;
   const rows=[group('Medical care',medicalTest,'All'),group('Dental',s=>/dental/i.test(s),'Dental'),group('Vision',s=>/eye|vision/i.test(s),'Vision'),{label:'Everyday extras',category:'All',state:extraCount?'extra':'not',detail:extraCount?`${extraCount} verified extra ${extraCount===1?'program':'programs'} found`:'No extra programs were verified for this selection'}];
   $('.snapshot-help').textContent='Select a category to jump into the detailed marketplace. Coverage and eligibility rules still depend on the exact plan.';
   $('#snapshotChart').innerHTML=rows.map((x,i)=>`<button class="snapshot-row ${x.state}" type="button" data-cat="${esc(x.category)}" title="${esc(x.label)}: ${esc(x.detail)}" aria-label="${esc(x.label)}. ${esc(x.state==='extra'?'Extra program':x.state==='covered'?'Included':'Not found')}. ${esc(x.detail)}"><span class="snapshot-label">${esc(x.label)}</span><span class="snapshot-track"><i style="transition-delay:${Math.min(i,9)*45}ms"></i></span><span class="snapshot-status">${x.state==='extra'?'Extras':x.state==='covered'?'Included':'Not found'}</span><span class="snapshot-tip">${esc(x.detail)}</span></button>`).join('');
@@ -75,7 +105,8 @@ function setMarketView(view){
 }
 function notCoveredListings(){
   const available=selectedListings(),source=mode==='commercial'?selectedPlan.sbc:(available[0]?.url||'#');
-  const rows=mode==='commercial'?(selectedPlan.benefitLabels||DATA.benefitLabels).filter(label=>!selectedPlan.benefits[label]?.covered).map(label=>({plan:selectedPlan.name,coverage:'Not listed',category:categoryFor(label),benefit:label,value:'Not shown as covered in this plan’s public benefit data.',requirements:'Do not assume this service is paid for. Check the official plan document or call the number on your card before scheduling or buying.',url:source})):[];
+  const verifiedNot=mode==='medicare'?selectedPlan.notCovered:mode==='medicaid'?(verifiedMedicaid(selectedPlan.id)?.notCovered||[]):null;
+  const rows=verifiedNot?verifiedNot.map(x=>({...x,plan:selectedPlan.name,coverage:'Not covered'})):mode==='commercial'?(selectedPlan.benefitLabels||DATA.benefitLabels).filter(label=>!selectedPlan.benefits[label]?.covered).map(label=>({plan:selectedPlan.name,coverage:'Not listed',category:categoryFor(label),benefit:label,value:'Not shown as covered in this plan’s public benefit data.',requirements:'Do not assume this service is paid for. Check the official plan document or call the number on your card before scheduling or buying.',url:source})):[];
   const misconceptions=[['Gym membership','Fitness'],['Over-the-counter vitamins','Pharmacy'],['Non-emergency transportation','Transportation'],['Routine adult dental','Dental'],['Routine adult vision','Vision'],['Cosmetic procedures','Medical care']];
   misconceptions.forEach(([benefit,category])=>{const words=benefit.toLowerCase().split(/\W+/).filter(w=>w.length>3),found=available.some(x=>words.some(w=>`${x.category} ${x.benefit}`.toLowerCase().includes(w))),already=rows.some(x=>x.benefit.toLowerCase().includes(benefit.replace('Routine adult ','').toLowerCase()));if(!found&&!already)rows.push({plan:selectedPlan.name,coverage:'Not verified',category,benefit,value:'No verified listing for this benefit was found for your selected card.',requirements:'This does not always mean the service is excluded. It means you should confirm with the insurer before relying on reimbursement or a discount.',url:source})});
   return rows;
@@ -98,7 +129,7 @@ function renderMarketplace(){
 }
 function openCompare(){
   $('#comparePanel').hidden=false;const sel=$('#compareIssuer');sel.innerHTML='';
-  if(mode==='medicaid'){$('#comparison').innerHTML='<div class="empty">Standardized side-by-side comparison is currently available for Marketplace cards.</div>';$('#comparePanel').scrollIntoView({behavior:'smooth'});return}
+  if(mode!=='commercial'){$('#comparison').innerHTML='<div class="empty">Standardized side-by-side comparison is currently available for Marketplace cards.</div>';$('#comparePanel').scrollIntoView({behavior:'smooth'});return}
   commercialIssuers().forEach(x=>sel.add(new Option(cleanIssuer(x),x)));sel.value=commercialIssuers().find(x=>x!==selectedPlan.issuer)||commercialIssuers()[0];fillComparePlans();
   $('#comparison').innerHTML='<div class="empty">Choose the other plan, then press “Show comparison.”</div>';$('#comparePanel').scrollIntoView({behavior:'smooth',block:'start'});
 }

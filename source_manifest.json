@@ -1,0 +1,39 @@
+{
+  "generated": "2026-09-24T15:01:10.380134+00:00",
+  "states": [
+    "CT",
+    "ME",
+    "MA",
+    "NH",
+    "RI",
+    "VT"
+  ],
+  "total_unique_clinicians": 108866,
+  "sources": [
+    {
+      "name": "CMS Doctors and Clinicians National Downloadable File (dataset mj5m-pzi6)",
+      "url": "https://data.cms.gov/provider-data/sites/default/files/resources/52c3f098d7e56028a298fd297cb0b38d_1787091341/DAC_NationalDownloadableFile.csv",
+      "sha256": "881e6882c8e0baf19863e15962594ffd7f5a07fbae28e646cffd7353cd0eb5ea",
+      "released": "2026-09-10",
+      "ne_rows": 191921,
+      "note": "Medicare Care Compare clinician-location records; filtered to 6 NE states."
+    },
+    {
+      "name": "Medicaid Provider Enrollment Segments (CMS/T-MSIS via HHS Open Data)",
+      "url": "https://stopendataprod.blob.core.windows.net/datasets/medicaid-provider-enrollment-segments/2026-07-24/dataset/medicaid-provider-enrollment-segments.csv.zip",
+      "sha256": "b70930a9a017d258cc3292ee74e2941b809487c966d9a3792548550030b9c59c",
+      "release": "2026-07-24",
+      "coverage": "Jan 2018 - Dec 2024 (2024 preliminary)",
+      "ne_segment_rows": 3249389
+    }
+  ],
+  "method": "Filtered both national files to CT/ME/MA/NH/RI/VT. Deduplicated clinicians to unique Type 1 NPIs. Joined the latest Medicaid enrollment segment (by segment end date, then start date) per NPI within each state and classified status.",
+  "status_definitions": {
+    "Active": "Latest segment shows active Medicaid/CHIP enrollment",
+    "Active - Do Not Pay": "Enrolled but flagged do-not-pay in source system",
+    "Terminated/Denied/Suspended": "Latest segment shows enrollment ended or barred",
+    "Eligibility verification only": "Limited enrollment for eligibility checks",
+    "No Medicaid record in extract": "In Medicare file but no NE Medicaid segment 2018-2024"
+  },
+  "limitations": "Medicaid data ends Dec 2024 (2024 preliminary). Status does not confirm current 2026 participation, specific plan/network acceptance, languages, accessibility, or new-patient status. Confirm directly with provider or health plan."
+}

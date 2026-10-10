@@ -1,24 +1,10 @@
-"""Build the New Hampshire plan dataset used by the static dashboard.
-
-The input CSV files are not committed to this repository. Download the current
-plan and benefit datasets from the official source, then pass their paths on the
-command line. The generated JSON can subsequently be extended with the Rhode
-Island and remaining New England scripts.
-"""
-
-import argparse
-import csv
-import json
-import statistics
+import csv, json, statistics
 from collections import defaultdict
-from pathlib import Path
 
-
-parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument("--plans", type=Path, required=True, help="Marketplace plan CSV")
-parser.add_argument("--benefits", type=Path, required=True, help="Marketplace benefit CSV")
-parser.add_argument("--output", type=Path, default=Path("dist/data.json"), help="Generated JSON path")
-args = parser.parse_args()
+ROOT='/workspace/scratch/0b642026e729'
+OUT='/workspace/sites/benefit-card-navigator/dist/data.json'
+PLAN=f'{ROOT}/nh_2026_commercial_plans.csv'
+BEN=f'{ROOT}/nh_2026_commercial_benefits.csv'
 
 TARGETS=[
  ('Acupuncture','Acupuncture'),('Chiropractic Care','Chiropractic'),
@@ -31,9 +17,9 @@ target_map=dict(TARGETS)
 def issuer_name(x):
  return (x or '').replace('Anthem Blue Cross and Blue Sheld','Anthem Blue Cross and Blue Shield')
 
-with args.plans.open(newline='',encoding='utf-8-sig') as f:
+with open(PLAN,newline='',encoding='utf-8-sig') as f:
  plans=list(csv.DictReader(f))
-with args.benefits.open(newline='',encoding='utf-8-sig') as f:
+with open(BEN,newline='',encoding='utf-8-sig') as f:
  benefits=list(csv.DictReader(f))
 
 benefit_map=defaultdict(dict)
@@ -95,6 +81,5 @@ for name in sorted(set(x['plan'] for x in extras)):
  extra_counts.append({'plan':name,'coverage':xs[0]['coverage'],'count':len(xs)})
 
 payload={'meta':{'year':2026,'state':'New Hampshire','commercialPlans':len(outplans),'basePlans':len(set(p['baseId'] for p in outplans)),'commercialIssuers':len(issuers),'medicaidPlans':3,'verified':'2026-09-17'},'benefitLabels':[x[1] for x in TARGETS],'plans':outplans,'issuerCoverage':issuer_coverage,'metalScores':metal_scores,'extras':extras,'extraCounts':extra_counts}
-args.output.parent.mkdir(parents=True, exist_ok=True)
-with args.output.open('w',encoding='utf-8') as f: json.dump(payload,f,separators=(',',':'))
-print(json.dumps({'plans':len(outplans),'bytes':args.output.stat().st_size,'issuers':issuers},indent=2))
+with open(OUT,'w',encoding='utf-8') as f: json.dump(payload,f,separators=(',',':'))
+print(json.dumps({'plans':len(outplans),'bytes':__import__('os').path.getsize(OUT),'issuers':issuers},indent=2))
