@@ -80,7 +80,7 @@ function marketplaceLink(){
   if(planId)q.set('plan_id',planId);
   else if(mode==='commercial'&&RI_MARKETPLACE.insurers[selectedPlan.issuer])q.set('insurer_id',RI_MARKETPLACE.insurers[selectedPlan.issuer]);
   else return'';
-  return`<a class="card-link" href="/marketplace/?${q}">See every item your card covers in the Marketplace →</a>`;
+  return`<a class="card-link" href="marketplace/?${q}">See every item your card covers in the Marketplace →</a>`;
 }
 function renderHeader(){
   const xs=selectedListings(),state=DATA.meta.stateNames?.[currentState]||currentState,issuer=mode==='commercial'?cleanIssuer(selectedPlan.issuer):mode==='medicare'?selectedPlan.insurer:state+' Medicaid';

@@ -7,6 +7,10 @@
 (function () {
   'use strict';
 
+  // provider-page.js lives at the site root; resolve data and links from it so the
+  // pages work at any depth and under a hosting subpath (e.g. GitHub Pages /Healthcare/).
+  const SITE_ROOT = document.currentScript ? new URL('./', document.currentScript.src).href : '/';
+
   const $ = (selector, parent = document) => parent.querySelector(selector);
   const $$ = (selector, parent = document) => [...parent.querySelectorAll(selector)];
   const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -173,7 +177,7 @@
       return;
     }
 
-    const url = state === 'RI' ? '/providers.json' : `/providers/${state.toLowerCase()}.json`;
+    const url = state === 'RI' ? `${SITE_ROOT}providers.json` : `${SITE_ROOT}providers/${state.toLowerCase()}.json`;
 
     fetch(url)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`Failed to load ${url}`))))
@@ -888,7 +892,7 @@
         </p>
 
         <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-          <a href="/practice/" class="primary-button" style="width:auto;padding:0 24px;text-decoration:none">
+          <a href="${SITE_ROOT}practice/" class="primary-button" style="width:auto;padding:0 24px;text-decoration:none">
             Open Practice Portal Prototype →
           </a>
           <button type="button" class="secondary-button" id="doneModalBtn">
@@ -941,14 +945,7 @@
           // If tab is an anchor to a dedicated route, allow normal navigation or pushState
           const href = tab.getAttribute('href');
           if (href && !href.startsWith('?') && !href.startsWith('#')) {
-            // Let the browser follow direct route if preferred, or pushState
-            try {
-              history.pushState({}, '', href);
-              e.preventDefault();
-              setProviderType(nextType);
-            } catch {
-              // fallback to default navigation
-            }
+            // Dedicated route: let the browser navigate to it.
           } else {
             e.preventDefault();
             history.pushState({}, '', `?type=${nextType}&state=${state}`);
